@@ -13,7 +13,40 @@ const COLORS = [
 ];
 
 export default function JoinRoom() {
+  const [name, setName] = useState("");
+  const [code, setCode] = useState("");
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{
+    name?: string;
+    code?: string;
+    color?: string;
+  }>({});
+
+  function handleJoinRoom() {
+    const newErrors: {
+      name?: string;
+      code?: string;
+      color?: string;
+    } = {};
+
+    if (!name.trim()) {
+      newErrors.name = "Digite seu nome";
+    }
+
+    if (!code.trim()) {
+      newErrors.code = "Informe o código da sala";
+    }
+
+    if (!selectedColor) {
+      newErrors.color = "Selecione uma cor";
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) return;
+
+    console.log("Entrar na sala:", { name, code, selectedColor });
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950 text-white flex items-center justify-center px-6 relative overflow-hidden">
@@ -33,14 +66,14 @@ export default function JoinRoom() {
           </label>
           <input
             type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             placeholder="Digite seu nome"
-            className="
-              w-full px-4 py-3 rounded-xl
-              bg-white/10 border border-white/30
-              focus:outline-none focus:border-orange-400
-              text-white placeholder:text-white/50
-            "
+            className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/30 focus:outline-none focus:border-red-400 text-white placeholder:text-white/50"
           />
+          {errors.code && (
+            <p className="mt-2 text-sm text-red-400">{errors.code}</p>
+          )}
         </div>
 
         {/* Código da sala */}
@@ -50,15 +83,14 @@ export default function JoinRoom() {
           </label>
           <input
             type="text"
-            placeholder="Ex: A7K9"
-            className="
-              w-full px-4 py-3 rounded-xl
-              bg-white/10 border border-white/30
-              focus:outline-none focus:border-orange-400
-              text-white placeholder:text-white/50
-              tracking-widest uppercase
-            "
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="Ex: AKJ3642"
+            className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/30 focus:outline-none focus:border-red-400 text-white placeholder:text-white/50 tracking-widest uppercase"
           />
+          {errors.code && (
+            <p className="mt-2 text-sm text-red-400">{errors.code}</p>
+          )}
         </div>
 
         {/* Escolha de cor */}
@@ -90,18 +122,11 @@ export default function JoinRoom() {
         {/* Botões */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
-            className="
-              px-10 py-4 rounded-2xl font-bold text-lg
-              bg-gradient-to-r from-orange-500 to-red-600
-              hover:from-orange-600 hover:to-red-700
-              transform hover:scale-105 active:scale-95
-              shadow-[0_10px_30px_rgba(251,146,60,0.6)]
-              transition-all duration-300
-            "
+            onClick={handleJoinRoom}
+            className="px-10 py-4 rounded-2xl font-bold text-lg bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 transform hover:scale-105 active:scale-95 shadow-[0_10px_30px_rgba(251,146,60,0.6)] transition-all duration-300"
           >
             Entrar
           </button>
-
           <Link href="/">
             <button
               className="

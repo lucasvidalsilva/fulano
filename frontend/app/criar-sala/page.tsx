@@ -13,8 +13,29 @@ const COLORS = [
 ];
 
 export default function CreateRoom() {
+  const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [impostors, setImpostors] = useState<1 | 2>(1);
+  const [errors, setErrors] = useState<{ name?: string; color?: string }>({});
+
+  function handleCreateRoom() {
+    const newErrors: { name?: string; color?: string } = {};
+
+    if (!name.trim()) {
+      newErrors.name = "Digite seu nome";
+    }
+
+    if (!selectedColor) {
+      newErrors.color = "Selecione uma cor";
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) return;
+
+    // aqui depois entra a lógica real de criar sala
+    console.log("Criar sala:", { name, selectedColor, impostors });
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950 text-white flex items-center justify-center px-6 relative overflow-hidden">
@@ -34,14 +55,14 @@ export default function CreateRoom() {
           </label>
           <input
             type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             placeholder="Digite seu nome"
-            className="
-              w-full px-4 py-3 rounded-xl
-              bg-white/10 border border-white/30
-              focus:outline-none focus:border-orange-400
-              text-white placeholder:text-white/50
-            "
+            className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/30 focus:outline-none focus:border-red-400 text-white placeholder:text-white/50"
           />
+          {errors.name && (
+            <p className="mt-2 text-sm text-red-400">{errors.name}</p>
+          )}
         </div>
 
         {/* Escolha de cor */}
@@ -67,6 +88,9 @@ export default function CreateRoom() {
                 style={{ backgroundColor: color }}
               />
             ))}
+            {errors.color && (
+              <p className="mt-3 text-sm text-red-400">{errors.color}</p>
+            )}
           </div>
         </div>
 
@@ -107,6 +131,7 @@ export default function CreateRoom() {
         {/* Botões */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
+            onClick={handleCreateRoom}
             className="
               px-10 py-4 rounded-2xl font-bold text-lg
               bg-gradient-to-r from-orange-500 to-red-600
