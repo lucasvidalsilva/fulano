@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const COLORS = [
@@ -12,11 +13,16 @@ const COLORS = [
   "#f97316", // laranja
 ];
 
+function gerarCodigo() {
+  return Math.random().toString(36).substring(2, 7).toUpperCase();
+}
+
 export default function CreateRoom() {
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [impostors, setImpostors] = useState<1 | 2>(1);
   const [errors, setErrors] = useState<{ name?: string; color?: string }>({});
+  const router = useRouter();
 
   function handleCreateRoom() {
     const newErrors: { name?: string; color?: string } = {};
@@ -33,9 +39,24 @@ export default function CreateRoom() {
 
     if (Object.keys(newErrors).length > 0) return;
 
-    // aqui depois entra a lógica real de criar sala
-    console.log("Criar sala:", { name, selectedColor, impostors });
+    const code = gerarCodigo();
+
+    // MOCK de backend
+    const roomData = {
+      code,
+      host: {
+        name,
+        color: selectedColor,
+      },
+      impostors,
+    };
+
+    localStorage.setItem("role", "host");
+    localStorage.setItem("room", JSON.stringify(roomData));
+
+    router.push(`/lobby/${code}`);
   }
+
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950 text-white flex items-center justify-center px-6 relative overflow-hidden">

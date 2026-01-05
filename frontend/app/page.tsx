@@ -64,7 +64,7 @@ export default function Home() {
       {/* Link Como jogar */}{" "}
       <Link
         href="/como-jogar"
-        className="mt-12 text-xl text-orange-300 hover:text-orange-200 underline underline-offset-4 decoration-orange-500/60 hover:decoration-orange-300 transition-colors"
+        className="mt-12 text-xl text-orange-300 hover:text-orange-200 underline-offset-4 decoration-orange-500/60 hover:decoration-orange-300 transition-colors"
       >
         {" "}
         Como jogar? (rápido e fácil!){" "}

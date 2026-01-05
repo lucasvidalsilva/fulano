@@ -1,18 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const COLORS = [
-  "#ef4444", // vermelho
-  "#3b82f6", // azul
-  "#22c55e", // verde
-  "#eab308", // amarelo
-  "#a855f7", // roxo
-  "#f97316", // laranja
+  "#ef4444",
+  "#3b82f6",
+  "#22c55e",
+  "#eab308",
+  "#a855f7",
+  "#f97316",
 ];
 
 export default function JoinRoom() {
+  const router = useRouter();
+
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
@@ -45,15 +48,24 @@ export default function JoinRoom() {
 
     if (Object.keys(newErrors).length > 0) return;
 
-    console.log("Entrar na sala:", { name, code, selectedColor });
+    const playerData = {
+      name,
+      color: selectedColor,
+      role: "player",
+      roomCode: code.toUpperCase(),
+    };
+
+    // MOCK de backend
+    localStorage.setItem("player", JSON.stringify(playerData));
+    localStorage.setItem("role", "player");
+
+    router.push(`/lobby/${code.toUpperCase()}`);
   }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950 text-white flex items-center justify-center px-6 relative overflow-hidden">
-      {/* Fundo decorativo */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,100,100,0.12),transparent_40%),radial-gradient(circle_at_80%_70%,rgba(100,100,255,0.12),transparent_40%)] pointer-events-none" />
 
-      {/* Card */}
       <div className="relative z-10 w-full max-w-lg bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] p-8 sm:p-10">
         <h2 className="text-3xl sm:text-4xl font-black mb-8 text-center">
           Entrar em Sala
@@ -71,8 +83,8 @@ export default function JoinRoom() {
             placeholder="Digite seu nome"
             className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/30 focus:outline-none focus:border-red-400 text-white placeholder:text-white/50"
           />
-          {errors.code && (
-            <p className="mt-2 text-sm text-red-400">{errors.code}</p>
+          {errors.name && (
+            <p className="mt-2 text-sm text-red-400">{errors.name}</p>
           )}
         </div>
 
@@ -85,7 +97,7 @@ export default function JoinRoom() {
             type="text"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="Ex: AKJ3642"
+            placeholder="Ex: WPWY57"
             className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/30 focus:outline-none focus:border-red-400 text-white placeholder:text-white/50 tracking-widest uppercase"
           />
           {errors.code && (
@@ -93,8 +105,8 @@ export default function JoinRoom() {
           )}
         </div>
 
-        {/* Escolha de cor */}
-        <div className="mb-10">
+        {/* Cor */}
+        <div className="mb-8">
           <span className="block mb-3 text-white/80 font-semibold">
             Escolha sua cor
           </span>
@@ -105,8 +117,7 @@ export default function JoinRoom() {
                 type="button"
                 onClick={() => setSelectedColor(color)}
                 className={`
-                  w-12 h-12 rounded-full
-                  border-4 transition-all
+                  w-12 h-12 rounded-full border-4 transition-all
                   ${
                     selectedColor === color
                       ? "border-white scale-110"
@@ -117,6 +128,9 @@ export default function JoinRoom() {
               />
             ))}
           </div>
+          {errors.color && (
+            <p className="mt-3 text-sm text-red-400">{errors.color}</p>
+          )}
         </div>
 
         {/* Botões */}
@@ -127,16 +141,9 @@ export default function JoinRoom() {
           >
             Entrar
           </button>
+
           <Link href="/">
-            <button
-              className="
-                px-10 py-4 rounded-2xl font-semibold text-lg
-                bg-white/10 backdrop-blur-md border-2 border-white/30
-                hover:bg-white/20 hover:border-white/60
-                transform hover:scale-105 active:scale-95
-                transition-all duration-300
-              "
-            >
+            <button className="px-10 py-4 rounded-2xl font-semibold text-lg bg-white/10 backdrop-blur-md border-2 border-white/30 hover:bg-white/20 hover:border-white/60 transform hover:scale-105 active:scale-95 transition-all duration-300">
               Cancelar
             </button>
           </Link>
