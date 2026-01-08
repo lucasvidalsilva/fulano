@@ -1,32 +1,96 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
-const MOCK_ROOM = {
-  maxPlayers: 10,
-  rounds: 2,
-  impostors: 2,
+type Player = {
+  id: string;
+  name: string;
+  color: string;
+  is_host: boolean;
 };
 
-const MOCK_PLAYERS = [
-  {
-    id: 1,
-    name: "Lucas",
-    color: "#ef4444",
-    isHost: true,
-    isYou: true,
-  },
-];
+type Room = {
+  id: string;
+  rounds: number;
+  impostors: number;
+};
 
 export default function LobbyPage() {
   const { code } = useParams<{ code: string }>();
-  const [players] = useState(MOCK_PLAYERS);
 
-  if (!code) {
+  const [room, setRoom] = useState<Room | null>(null);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 1️⃣ Buscar sala pelo código
+  useEffect(() => {
+    async function loadRoom() {
+      const { data, error } = await supabase
+        .from("rooms")
+        .select("id, rounds, impostors")
+        .eq("code", code)
+        .single();
+
+      if (error || !data) {
+        setLoading(false);
+        return;
+      }
+
+      setRoom(data);
+    }
+
+    if (code) loadRoom();
+  }, [code]);
+
+  // 2️⃣ Buscar jogadores + realtime
+  useEffect(() => {
+    if (!room?.id) return;
+
+    async function loadPlayers() {
+      const { data } = await supabase
+        .from("players")
+        .select("id, name, color, is_host")
+        .eq("room_id", room.id);
+
+      setPlayers(data ?? []);
+      setLoading(false);
+    }
+
+    loadPlayers();
+
+    const channel = supabase
+      .channel(`room-${room.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "players",
+          filter: `room_id=eq.${room.id}`,
+        },
+        () => loadPlayers()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [room]);
+
+  if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center text-white">
-        Código inválido
+        Carregando sala...
+      </main>
+    );
+  }
+
+  if (!room) {
+    return (
+      <main className="min-h-screen flex items-center justify-center text-white">
+        Sala não encontrada
       </main>
     );
   }
@@ -46,15 +110,22 @@ export default function LobbyPage() {
             </p>
           </div>
 
-          <button className="px-5 py-3 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 transition">
+          <button
+            onClick={() =>
+              navigator.clipboard.writeText(
+                `${window.location.origin}/entrar-sala/${code}`
+              )
+            }
+            className="px-5 py-3 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 transition"
+          >
             Copiar link
           </button>
         </div>
 
         <div className="flex justify-between text-sm text-white/70 mt-4">
-          <span>{players.length}/{MOCK_ROOM.maxPlayers} jogadores</span>
+          <span>{players.length}/10 jogadores</span>
           <span>
-            {MOCK_ROOM.rounds} rodadas · {MOCK_ROOM.impostors} impostores
+            {room.rounds} rodadas · {room.impostors} impostores
           </span>
         </div>
       </div>
@@ -73,18 +144,11 @@ export default function LobbyPage() {
 
             <span className="font-semibold">{player.name}</span>
 
-            <div className="flex gap-2 mt-2">
-              {player.isHost && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500">
-                  HOST
-                </span>
-              )}
-              {player.isYou && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500">
-                  VOCÊ
-                </span>
-              )}
-            </div>
+            {player.is_host && (
+              <span className="text-xs px-2 py-0.5 mt-2 rounded-full bg-orange-500">
+                HOST
+              </span>
+            )}
           </div>
         ))}
       </div>
