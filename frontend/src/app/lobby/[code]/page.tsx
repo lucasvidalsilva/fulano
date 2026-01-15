@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -24,9 +24,15 @@ export default function LobbyPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 1️⃣ Buscar sala pelo código
+  /**
+   * 1️⃣ Buscar sala
+   */
   useEffect(() => {
+    if (!code) return;
+
     async function loadRoom() {
+      setLoading(true);
+
       const { data, error } = await supabase
         .from("rooms")
         .select("id, rounds, impostors")
@@ -34,6 +40,7 @@ export default function LobbyPage() {
         .single();
 
       if (error || !data) {
+        setRoom(null);
         setLoading(false);
         return;
       }
@@ -41,27 +48,36 @@ export default function LobbyPage() {
       setRoom(data);
     }
 
-    if (code) loadRoom();
+    loadRoom();
   }, [code]);
 
-  // 2️⃣ Buscar jogadores + realtime
-  useEffect(() => {
-    if (!room?.id) return;
-
-    async function loadPlayers() {
+  /**
+   * 2️⃣ Buscar jogadores (função reutilizável)
+   */
+  const loadPlayers = useCallback(
+    async (roomId: string) => {
       const { data } = await supabase
         .from("players")
         .select("id, name, color, is_host")
-        .eq("room_id", room.id);
+        .eq("room_id", roomId)
+        .order("created_at", { ascending: true });
 
       setPlayers(data ?? []);
       setLoading(false);
-    }
+    },
+    []
+  );
 
-    loadPlayers();
+  /**
+   * 3️⃣ Players + Realtime
+   */
+  useEffect(() => {
+    if (!room?.id) return;
+
+    loadPlayers(room.id);
 
     const channel = supabase
-      .channel(`room-${room.id}`)
+      .channel(`room:${room.id}`)
       .on(
         "postgres_changes",
         {
@@ -70,15 +86,18 @@ export default function LobbyPage() {
           table: "players",
           filter: `room_id=eq.${room.id}`,
         },
-        () => loadPlayers()
+        () => loadPlayers(room.id)
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [room]);
+  }, [room?.id, loadPlayers]);
 
+  /**
+   * Estados globais
+   */
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center text-white">
@@ -95,6 +114,9 @@ export default function LobbyPage() {
     );
   }
 
+  /**
+   * UI
+   */
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950 text-white flex flex-col items-center px-6 py-10 relative overflow-hidden">
       {/* Fundo */}
